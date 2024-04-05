@@ -17,11 +17,24 @@ import torch
 import torch.distributed as dist
 from torch import Tensor
 
+import wandb 
+
 # needed due to empty tensor bug in pytorch and torchvision 0.5
 import torchvision
 if version.parse(torchvision.__version__) < version.parse('0.7'):
     from torchvision.ops import _new_empty_tensor
     from torchvision.ops.misc import _output_size
+
+def wandb_setup(params, save_dir, run_id=None):
+    wandb_run = wandb.init(
+                        project='act',
+                        config=params,
+                        name=params['run_name'],
+                        id=run_id,
+                        resume=run_id is not None,
+                        dir=save_dir,
+                  )
+    return wandb_run.id
 
 
 class SmoothedValue(object):
