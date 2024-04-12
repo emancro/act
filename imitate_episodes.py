@@ -8,11 +8,14 @@ from copy import deepcopy
 from tqdm import tqdm
 from einops import rearrange
 
+import copy
+
 from detr.experiment_configs.sim_constants import DT
 from detr.experiment_configs.sim_constants import PUPPET_GRIPPER_JOINT_OPEN
 from utils import load_data # data functions
 from utils import sample_box_pose, sample_insertion_pose # robot functions
 from utils import compute_dict_mean, set_seed, detach_dict # helper functions
+from utils import get_single_qpos
 from policy import ACTPolicy, CNNMLPPolicy
 from visualize_episodes import save_videos
 
@@ -37,10 +40,11 @@ def main(args):
     batch_size_val = args['batch_size']
     num_epochs = args['num_epochs']
 
-    now = datetime.now()
-    date_string = now.strftime("%Y-%m-%d-%H-%M-%S")
-    ckpt_dir = args['chkpt_dir'] = os.path.join(ckpt_dir, date_string + task_name + args['run_name'])
-    os.makedirs(ckpt_dir)
+    if not is_eval:
+        now = datetime.now()
+        date_string = now.strftime("%Y-%m-%d-%H-%M-%S")
+        ckpt_dir = args['chkpt_dir'] = os.path.join(ckpt_dir, date_string + task_name + args['run_name'])
+        os.makedirs(ckpt_dir)
 
     # get task parameters
     is_sim = task_name[:4] == 'sim_'
@@ -56,7 +60,7 @@ def main(args):
     camera_names = task_config['camera_names']
 
     # fixed parameters
-    state_dim = 6
+    state_dim = 9
     lr_backbone = 1e-5
     backbone = 'resnet18'
     if policy_class == 'ACT':
@@ -150,10 +154,28 @@ def make_optimizer(policy_class, policy):
     return optimizer
 
 
+def pre_position(env, teleop_policy):
+    print('pre-positioning, press handle button to pre-position robot. Press A to start recording. Relase Handle Button to stop recording')
+    teleop_policy.wait_for_start()
+    print('started')
+    
+    done = False
+    obs = env.reset()
+    t = 0
+    while not done:
+        action_infos = teleop_policy.act(obs)            
+        if action_infos['button_infos']['A']:
+            done = True
+        obs, info = env.step(action_infos, t)
+        
+        t += 1
+    print('pre-positioning done.')
+
+
 def get_image(ts, camera_names):
     curr_images = []
     for cam_name in camera_names:
-        curr_image = rearrange(ts.observation['images'][cam_name], 'h w c -> c h w')
+        curr_image = rearrange(ts.images[cam_name], 'h w c -> c h w')
         curr_images.append(curr_image)
     curr_image = np.stack(curr_images, axis=0)
     curr_image = torch.from_numpy(curr_image / 255.0).float().cuda().unsqueeze(0)
@@ -191,10 +213,19 @@ def eval_bc(config, ckpt_name, save_episode=True):
 
     # load environment
     if real_robot:
-        from aloha_scripts.robot_utils import move_grippers # requires aloha
-        from aloha_scripts.real_env import make_real_env # requires aloha
-        env = make_real_env(init_node=True)
+        from emancro_base.robot_infra.xarm.visio_motor.xarm_mdp_env import XarmMDP_DeltaPosAbsRot
+        env = XarmMDP_DeltaPosAbsRot(control_freq=50)
         env_max_reward = 0
+        
+        from emancro_base.robot_infra.oculus_teleop.vr_teleop_policy import VRTeleopPolicy
+        from emancro_base.robot_infra.transform_publisher.transform_publisher.transform_broadcast import TransformPublisherNodeManager
+        from oculus_reader.reader import OculusReader
+        
+        nodemanager = TransformPublisherNodeManager()
+        oculus_reader = OculusReader()
+        teleop_policy = VRTeleopPolicy(node_manager=nodemanager, environment=env, oculus_reader=oculus_reader)
+        
+        pre_position(env, teleop_policy)
     else:
         from sim_env import make_sim_env
         env = make_sim_env(task_name)
@@ -212,13 +243,9 @@ def eval_bc(config, ckpt_name, save_episode=True):
     highest_rewards = []
     for rollout_id in range(num_rollouts):
         rollout_id += 0
-        ### set task
-        if 'sim_transfer_cube' in task_name:
-            BOX_POSE[0] = sample_box_pose() # used in sim reset
-        elif 'sim_insertion' in task_name:
-            BOX_POSE[0] = np.concatenate(sample_insertion_pose()) # used in sim reset
-
-        ts = env.reset()
+        
+        obs = env.reset()
+        obs = copy.deepcopy(obs)
 
         ### onscreen render
         if onscreen_render:
@@ -233,7 +260,7 @@ def eval_bc(config, ckpt_name, save_episode=True):
         qpos_history = torch.zeros((1, max_timesteps, state_dim)).cuda()
         image_list = [] # for visualization
         qpos_list = []
-        target_qpos_list = []
+        action_list = []
         rewards = []
         with torch.inference_mode():
             for t in range(max_timesteps):
@@ -244,16 +271,16 @@ def eval_bc(config, ckpt_name, save_episode=True):
                     plt.pause(DT)
 
                 ### process previous timestep to get qpos and image_list
-                obs = ts.observation
                 if 'images' in obs:
                     image_list.append(obs['images'])
                 else:
                     image_list.append({'main': obs['image']})
-                qpos_numpy = np.array(obs['qpos'])
+
+                qpos_numpy = get_single_qpos(obs.robot_pose)
                 qpos = pre_process(qpos_numpy)
                 qpos = torch.from_numpy(qpos).float().cuda().unsqueeze(0)
                 qpos_history[:, t] = qpos
-                curr_image = get_image(ts, camera_names)
+                curr_image = get_image(obs, camera_names)
 
                 ### query policy
                 if config['policy_class'] == "ACT":
@@ -282,47 +309,17 @@ def eval_bc(config, ckpt_name, save_episode=True):
                 target_qpos = action
 
                 ### step the environment
-                ts = env.step(target_qpos)
+                obs, info = env.step(target_qpos, t)
+                obs = copy.deepcopy(obs)
 
                 ### for visualization
                 qpos_list.append(qpos_numpy)
-                target_qpos_list.append(target_qpos)
-                rewards.append(ts.reward)
+                action_list.append(target_qpos)
 
             plt.close()
-        if real_robot:
-            move_grippers([env.puppet_bot_left, env.puppet_bot_right], [PUPPET_GRIPPER_JOINT_OPEN] * 2, move_time=0.5)  # open
-            pass
-
-        rewards = np.array(rewards)
-        episode_return = np.sum(rewards[rewards!=None])
-        episode_returns.append(episode_return)
-        episode_highest_reward = np.max(rewards)
-        highest_rewards.append(episode_highest_reward)
-        print(f'Rollout {rollout_id}\n{episode_return=}, {episode_highest_reward=}, {env_max_reward=}, Success: {episode_highest_reward==env_max_reward}')
 
         if save_episode:
             save_videos(image_list, DT, video_path=os.path.join(ckpt_dir, f'video{rollout_id}.mp4'))
-
-    success_rate = np.mean(np.array(highest_rewards) == env_max_reward)
-    avg_return = np.mean(episode_returns)
-    summary_str = f'\nSuccess rate: {success_rate}\nAverage return: {avg_return}\n\n'
-    for r in range(env_max_reward+1):
-        more_or_equal_r = (np.array(highest_rewards) >= r).sum()
-        more_or_equal_r_rate = more_or_equal_r / num_rollouts
-        summary_str += f'Reward >= {r}: {more_or_equal_r}/{num_rollouts} = {more_or_equal_r_rate*100}%\n'
-
-    print(summary_str)
-
-    # save success rate to txt
-    result_file_name = 'result_' + ckpt_name.split('.')[0] + '.txt'
-    with open(os.path.join(ckpt_dir, result_file_name), 'w') as f:
-        f.write(summary_str)
-        f.write(repr(episode_returns))
-        f.write('\n\n')
-        f.write(repr(highest_rewards))
-
-    return success_rate, avg_return
 
 
 def forward_pass(data, policy):

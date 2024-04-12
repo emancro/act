@@ -16,10 +16,18 @@ import IPython
 e = IPython.embed
 
 def get_qpos(root):
+    # goes together with the function below! Do not change separately!
     xyz = root['observations']['robot_poses'][:, :3]  # get the xyz
     joint_angles = root['observations']['robot_poses'][:, 3:]  # get the joint angles and convert to r6
     r6s = np.array([euler_to_r6(degrees, degrees=True) for degrees in joint_angles])
     return np.concatenate([xyz, r6s], axis=1)
+
+def get_single_qpos(pose):
+    # goes together with the function above! Do not change separately!
+    xyz = pose[:3]
+    joint_angles = pose[3:]
+    r6s = euler_to_r6(joint_angles, degrees=True)
+    return np.concatenate([xyz, r6s], axis=0)
     
 
 class EpisodicDataset(torch.utils.data.Dataset):
