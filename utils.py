@@ -111,9 +111,14 @@ def get_norm_stats(all_hdf5_files):
     all_action_data = []
     episode_lens = []
     for file in all_hdf5_files:
-        with h5py.File(file, 'r') as root:
-            qpos = get_qpos(root)
-            action = root['/action'][()]
+        # print("opening ", file)
+        try:
+            with h5py.File(file, 'r') as root:
+                qpos = get_qpos(root)
+                action = root['/action'][()]
+        except:
+            print("error opening ", file)
+            continue
         all_qpos_data.append(torch.from_numpy(qpos))
         episode_lens.append(action.shape[0])
         all_action_data.append(torch.from_numpy(action))
@@ -141,7 +146,14 @@ def get_norm_stats(all_hdf5_files):
 def load_data(dataset_dir, max_num_episodes, camera_names, batch_size_train, batch_size_val, episode_len):
     print(f'\nData from: {dataset_dir}\n')
 
-    all_hdf5 = glob.glob(os.path.join(dataset_dir, '**/*.hdf5'), recursive=True)
+    if isinstance(dataset_dir, list):
+        all_hdf5 = []
+        for d in dataset_dir:
+            new_files = glob.glob(os.path.join(d, '**/*.hdf5'), recursive=True)
+            assert len(new_files) > 0, f"no hdf5 files found in {d}"
+            all_hdf5 += new_files
+    else:
+        all_hdf5 = glob.glob(os.path.join(dataset_dir, '**/*.hdf5'), recursive=True)
     
     print(f"found {len(all_hdf5)} hdf5 files")
     random.shuffle(all_hdf5)

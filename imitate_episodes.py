@@ -182,7 +182,7 @@ def get_image(ts, camera_names):
     return curr_image
 
 
-def eval_bc(config, ckpt_name, save_episode=True):
+def eval_bc(config, ckpt_name, save_episode=False):
     set_seed(1000)
     ckpt_dir = config['ckpt_dir']
     state_dim = config['state_dim']
@@ -225,11 +225,16 @@ def eval_bc(config, ckpt_name, save_episode=True):
         oculus_reader = OculusReader()
         teleop_policy = VRTeleopPolicy(node_manager=nodemanager, environment=env, oculus_reader=oculus_reader)
         
-        pre_position(env, teleop_policy)
     else:
         from sim_env import make_sim_env
         env = make_sim_env(task_name)
         env_max_reward = env.task.max_reward
+        
+        
+    run_episode(config, save_episode, ckpt_dir, state_dim, onscreen_render, policy_config, camera_names, max_timesteps, temporal_agg, onscreen_cam, policy, pre_process, post_process, env, teleop_policy)
+
+def run_episode(config, save_episode, ckpt_dir, state_dim, onscreen_render, policy_config, camera_names, max_timesteps, temporal_agg, onscreen_cam, policy, pre_process, post_process, env, teleop_policy):
+    pre_position(env, teleop_policy)
 
     query_frequency = policy_config['num_queries']
     if temporal_agg:
