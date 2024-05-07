@@ -115,7 +115,7 @@ def main(args):
         exit()
 
     train_dataloader, val_dataloader, stats, _ = load_data(dataset_dir, num_episodes, camera_names, 
-                                                           batch_size_train, batch_size_val, episode_len)
+                                                           batch_size_train, batch_size_val, stage_key=task_config['stage_key'])
 
     # save dataset stats
     if not os.path.isdir(ckpt_dir):

@@ -143,17 +143,22 @@ def get_norm_stats(all_hdf5_files):
     return stats, np.max(np.array(episode_lens))
 
 
-def load_data(dataset_dir, max_num_episodes, camera_names, batch_size_train, batch_size_val, episode_len):
+def load_data(dataset_dir, max_num_episodes, camera_names, batch_size_train, batch_size_val, stage_key=None):
     print(f'\nData from: {dataset_dir}\n')
+
+    if stage_key is None:
+        search_pattern = '**/*.hdf5'
+    else:
+        search_pattern = f'**/*/*{stage_key}.hdf5'
 
     if isinstance(dataset_dir, list):
         all_hdf5 = []
         for d in dataset_dir:
-            new_files = glob.glob(os.path.join(d, '**/*.hdf5'), recursive=True)
+            new_files = glob.glob(os.path.join(d, search_pattern), recursive=True)
             assert len(new_files) > 0, f"no hdf5 files found in {d}"
             all_hdf5 += new_files
     else:
-        all_hdf5 = glob.glob(os.path.join(dataset_dir, '**/*.hdf5'), recursive=True)
+        all_hdf5 = glob.glob(os.path.join(dataset_dir, search_pattern), recursive=True)
     
     print(f"found {len(all_hdf5)} hdf5 files")
     random.shuffle(all_hdf5)
