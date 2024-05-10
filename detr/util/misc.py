@@ -26,8 +26,12 @@ if version.parse(torchvision.__version__) < version.parse('0.7'):
     from torchvision.ops.misc import _output_size
 
 def wandb_setup(params, save_dir, run_id=None):
+    os.environ['WANDB_API_KEY'] = 'af0edcc7e00d8ecbda1e4765b1dcb2e2841840ca'
+    os.environ['WANDB_USER_EMAIL'] = 'dcai@emancro.ai'
+    os.environ['WANDB_USERNAME'] ='emancro_dcai'
+    os.environ["WANDB_MODE"] = "run"
     wandb_run = wandb.init(
-                        project='act',
+                        project='closed_loop_policy',
                         config=params,
                         name=params['run_name'],
                         id=run_id,
