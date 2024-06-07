@@ -159,7 +159,7 @@ def make_optimizer(policy_class, policy):
 
 
 def pre_position(env, teleop_policy):
-    print('pre-positioning, press handle button to pre-position robot. Press A to start recording. Relase Handle Button to stop recording')
+    print('pre-positioning, press handle button to pre-position robot.Relase Handle Button to stop recording')
     teleop_policy.wait_for_start()
     print('started')
     
@@ -234,8 +234,6 @@ def eval_bc(config, ckpt_name, save_episode=False, zero_qpos=False):
         env = make_sim_env(task_name)
         env_max_reward = env.task.max_reward
         
-
-    pre_position(env, teleop_policy)
 
     query_frequency = policy_config['num_queries']
     if temporal_agg:

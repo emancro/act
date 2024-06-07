@@ -64,3 +64,13 @@ python3 imitate_episodes.py \
     --seed 0 \
     --eval \
     --run_name eval
+
+python3 imitate_episodes.py \
+    --task_name insert_ibuprofen_zeroqpos \
+    --ckpt_dir /home/user/code/act/training_outputs/2024-06-06-17-51-39insert_ibuprofen_zeroqposinsert_ibuprofen_zeroqpos \
+    --ckpt_name policy_epoch_7500_seed_0.ckpt \
+    --policy_class ACT --kl_weight 10 --chunk_size 40 --hidden_dim 512 --batch_size 32 --dim_feedforward 3200 \
+    --num_epochs 5000  --lr 2e-5 \
+    --seed 0 \
+    --eval \
+    --run_name eval
