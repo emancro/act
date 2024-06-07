@@ -42,6 +42,25 @@ TASK_CONFIGS = {
         'episode_len': 80,
         'camera_names': ['color_image'],
     },
+
+    'insert_ibuprofen':{
+        'dataset_dir': [
+                        os.environ['DATA'] + '/closed_loop_demos/insert_ibuprofen',
+                        ],
+        'num_episodes': -1,
+        'episode_len': 80,
+        'camera_names': ['color_image'],
+    },
+
+    'insert_ibuprofen_zeroqpos':{
+        'dataset_dir': [
+                        os.environ['DATA'] + '/closed_loop_demos/insert_ibuprofen',
+                        ],
+        'num_episodes': -1,
+        'episode_len': 80,
+        'camera_names': ['color_image'],
+        'zero_qpos': True
+    },
 }
 
 ### ALOHA fixed constants

@@ -58,6 +58,10 @@ def main(args):
     num_episodes = task_config['num_episodes']
     episode_len = task_config['episode_len']
     camera_names = task_config['camera_names']
+    if 'zero_qpos' in task_config:
+        zero_qpos = task_config['zero_qpos']
+    else:
+        zero_qpos = False
 
     # fixed parameters
     state_dim = 9
@@ -106,7 +110,7 @@ def main(args):
         ckpt_names = [f'policy_best.ckpt']
         results = []
         for ckpt_name in ckpt_names:
-            success_rate, avg_return = eval_bc(config, ckpt_name, save_episode=True)
+            success_rate, avg_return = eval_bc(config, ckpt_name, save_episode=True, zero_qpos=zero_qpos)
             results.append([ckpt_name, success_rate, avg_return])
 
         for ckpt_name, success_rate, avg_return in results:
@@ -115,7 +119,7 @@ def main(args):
         exit()
 
     train_dataloader, val_dataloader, stats, _ = load_data(dataset_dir, num_episodes, camera_names, 
-                                                           batch_size_train, batch_size_val, stage_key=task_config['stage_key'])
+                                                           batch_size_train, batch_size_val, task_config, zero_qpos=zero_qpos)
 
     # save dataset stats
     if not os.path.isdir(ckpt_dir):
@@ -182,7 +186,7 @@ def get_image(ts, camera_names):
     return curr_image
 
 
-def eval_bc(config, ckpt_name, save_episode=False):
+def eval_bc(config, ckpt_name, save_episode=False, zero_qpos=False):
     set_seed(1000)
     ckpt_dir = config['ckpt_dir']
     state_dim = config['state_dim']
@@ -230,10 +234,7 @@ def eval_bc(config, ckpt_name, save_episode=False):
         env = make_sim_env(task_name)
         env_max_reward = env.task.max_reward
         
-        
-    run_episode(config, save_episode, ckpt_dir, state_dim, onscreen_render, policy_config, camera_names, max_timesteps, temporal_agg, onscreen_cam, policy, pre_process, post_process, env, teleop_policy)
 
-def run_episode(config, save_episode, ckpt_dir, state_dim, onscreen_render, policy_config, camera_names, max_timesteps, temporal_agg, onscreen_cam, policy, pre_process, post_process, env, teleop_policy):
     pre_position(env, teleop_policy)
 
     query_frequency = policy_config['num_queries']
@@ -284,6 +285,9 @@ def run_episode(config, save_episode, ckpt_dir, state_dim, onscreen_render, poli
                 qpos_numpy = get_single_qpos(obs.robot_pose)
                 qpos = pre_process(qpos_numpy)
                 qpos = torch.from_numpy(qpos).float().cuda().unsqueeze(0)
+                if zero_qpos:
+                    print('zeroing qpos')
+                    qpos = torch.zeros_like(qpos)
                 qpos_history[:, t] = qpos
                 curr_image = get_image(obs, camera_names)
 

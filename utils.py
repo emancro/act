@@ -31,7 +31,7 @@ def get_single_qpos(pose):
     
 
 class EpisodicDataset(torch.utils.data.Dataset):
-    def __init__(self, episode_filenames, dataset_dir, camera_names, norm_stats, slice_episode_len):
+    def __init__(self, episode_filenames, dataset_dir, camera_names, norm_stats, slice_episode_len, zero_qpos=False):
         super(EpisodicDataset).__init__()
         self.episode_filenames = episode_filenames
         self.dataset_dir = dataset_dir
@@ -39,6 +39,7 @@ class EpisodicDataset(torch.utils.data.Dataset):
         self.norm_stats = norm_stats
         self.is_sim = None
         self.slice_episode_len = slice_episode_len
+        self.zero_qpos = zero_qpos
         self.__getitem__(0) # initialize self.is_sim
 
     def __len__(self):
@@ -96,7 +97,10 @@ class EpisodicDataset(torch.utils.data.Dataset):
         # normalize image and change dtype to float
         image_data = image_data / 255.0
         action_data = (action_data - self.norm_stats["action_mean"]) / self.norm_stats["action_std"]
-        qpos_data = (qpos_data - self.norm_stats["qpos_mean"]) / self.norm_stats["qpos_std"]
+        if self.zero_qpos:
+            qpos_data = torch.zeros_like(qpos_data)
+        else:
+            qpos_data = (qpos_data - self.norm_stats["qpos_mean"]) / self.norm_stats["qpos_std"]
 
         # print('image_data', image_data.shape)
         # print('qpos_data', qpos_data.shape)
@@ -143,13 +147,14 @@ def get_norm_stats(all_hdf5_files):
     return stats, np.max(np.array(episode_lens))
 
 
-def load_data(dataset_dir, max_num_episodes, camera_names, batch_size_train, batch_size_val, stage_key=None):
+def load_data(dataset_dir, max_num_episodes, camera_names, batch_size_train, batch_size_val, task_config, zero_qpos=False):
     print(f'\nData from: {dataset_dir}\n')
 
-    if stage_key is None:
-        search_pattern = '**/*.hdf5'
-    else:
+    if 'stage_key' in task_config:  # for multi stage tasks
+        stage_key = task_config['stage_key']
         search_pattern = f'**/*/*{stage_key}.hdf5'
+    else:
+        search_pattern = '**/*/*.hdf5'
 
     if isinstance(dataset_dir, list):
         all_hdf5 = []
@@ -177,8 +182,8 @@ def load_data(dataset_dir, max_num_episodes, camera_names, batch_size_train, bat
     norm_stats, max_episode_len = get_norm_stats(all_hdf5)
 
     # construct dataset and dataloader
-    train_dataset = EpisodicDataset(train_files, dataset_dir, camera_names, norm_stats, max_episode_len)
-    val_dataset = EpisodicDataset(val_files, dataset_dir, camera_names, norm_stats, max_episode_len)
+    train_dataset = EpisodicDataset(train_files, dataset_dir, camera_names, norm_stats, max_episode_len, zero_qpos=zero_qpos)
+    val_dataset = EpisodicDataset(val_files, dataset_dir, camera_names, norm_stats, max_episode_len, zero_qpos=zero_qpos)
     print('train_dataset len:', len(train_dataset))
     print('val_dataset len:', len(val_dataset))
     
