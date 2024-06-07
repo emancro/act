@@ -18,8 +18,8 @@ e = IPython.embed
 def get_qpos(root):
     # goes together with the function below! Do not change separately!
     xyz = root['observations']['robot_poses'][:, :3]  # get the xyz
-    joint_angles = root['observations']['robot_poses'][:, 3:]  # get the joint angles and convert to r6
-    r6s = np.array([euler_to_r6(degrees, degrees=True) for degrees in joint_angles])
+    euler = root['observations']['robot_poses'][:, 3:]  # get the euler angles and convert to r6
+    r6s = np.array([euler_to_r6(degrees, degrees=True) for degrees in euler])
     return np.concatenate([xyz, r6s], axis=1)
 
 def get_single_qpos(pose):

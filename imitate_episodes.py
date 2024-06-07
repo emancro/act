@@ -107,7 +107,7 @@ def main(args):
     }
 
     if is_eval:
-        ckpt_names = [f'policy_best.ckpt']
+        ckpt_names = [args['ckpt_name']]
         results = []
         for ckpt_name in ckpt_names:
             success_rate, avg_return = eval_bc(config, ckpt_name, save_episode=True, zero_qpos=zero_qpos)
@@ -248,6 +248,9 @@ def eval_bc(config, ckpt_name, save_episode=False, zero_qpos=False):
     episode_returns = []
     highest_rewards = []
     for rollout_id in range(num_rollouts):
+        
+        pre_position(env, teleop_policy)
+        
         rollout_id += 0
         
         obs = env.reset()
@@ -327,8 +330,8 @@ def eval_bc(config, ckpt_name, save_episode=False, zero_qpos=False):
 
             plt.close()
 
-        if save_episode:
-            save_videos(image_list, DT, video_path=os.path.join(ckpt_dir, f'video{rollout_id}.mp4'))
+        # if save_episode:
+        #     save_videos(image_list, DT, video_path=os.path.join(ckpt_dir, f'video{rollout_id}.mp4'))
 
 
 def forward_pass(data, policy):
@@ -441,6 +444,7 @@ if __name__ == '__main__':
     parser.add_argument('--onscreen_render', action='store_true')
     parser.add_argument('--run_name', action='store', type=str, help='run_name', required=True)
     parser.add_argument('--ckpt_dir', action='store', type=str, help='ckpt_dir', required=True)
+    parser.add_argument('--ckpt_name', action='store', type=str, help='ckpt_dir', required=True)
     parser.add_argument('--policy_class', action='store', type=str, help='policy_class, capitalize', required=True)
     parser.add_argument('--task_name', action='store', type=str, help='task_name', required=True)
     parser.add_argument('--batch_size', action='store', type=int, help='batch_size', required=True)
