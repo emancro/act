@@ -25,11 +25,10 @@ if version.parse(torchvision.__version__) < version.parse('0.7'):
     from torchvision.ops import _new_empty_tensor
     from torchvision.ops.misc import _output_size
 
-def wandb_setup(params, save_dir, run_id=None):
-    os.environ['WANDB_API_KEY'] = 'af0edcc7e00d8ecbda1e4765b1dcb2e2841840ca'
-    os.environ['WANDB_USER_EMAIL'] = 'dcai@emancro.ai'
-    os.environ['WANDB_USERNAME'] ='emancro_dcai'
-    os.environ["WANDB_MODE"] = "run"
+def wandb_setup(params, save_dir, mode, run_id=None):
+    os.environ['WANDB_API_KEY'] = '0d98919f1dac74f61fae02938822ece99e40d095'
+    os.environ['WANDB_USER_EMAIL'] = 'febert@emancro.ai'
+    os.environ['WANDB_USERNAME'] ='febert1'
     wandb_run = wandb.init(
                         project='closed_loop_policy',
                         config=params,
@@ -37,6 +36,7 @@ def wandb_setup(params, save_dir, run_id=None):
                         id=run_id,
                         resume=run_id is not None,
                         dir=save_dir,
+                        mode=mode
                   )
     return wandb_run.id
 

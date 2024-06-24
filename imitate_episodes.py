@@ -62,6 +62,10 @@ def main(args):
         zero_qpos = task_config['zero_qpos']
     else:
         zero_qpos = False
+    if 'actiondim' in task_config:
+        actiondim = task_config['actiondim']
+    else:
+        actiondim = 9 # used in earlier tasks
 
     # fixed parameters
     state_dim = 9
@@ -82,6 +86,7 @@ def main(args):
                          'dec_layers': dec_layers,
                          'nheads': nheads,
                          'camera_names': camera_names,
+                         'actiondim': actiondim,
                          }
     elif policy_class == 'CNNMLP':
         policy_config = {'lr': args['lr'], 'lr_backbone': lr_backbone, 'backbone' : backbone, 'num_queries': 1,
@@ -128,7 +133,7 @@ def main(args):
     with open(stats_path, 'wb') as f:
         pickle.dump(stats, f)
 
-    wandb_setup(config, ckpt_dir)
+    wandb_setup(config, ckpt_dir, args['wandb_mode'])
     best_ckpt_info = train_bc(train_dataloader, val_dataloader, config)
     best_epoch, min_val_loss, best_state_dict = best_ckpt_info
 
@@ -442,7 +447,7 @@ if __name__ == '__main__':
     parser.add_argument('--onscreen_render', action='store_true')
     parser.add_argument('--run_name', action='store', type=str, help='run_name', required=True)
     parser.add_argument('--ckpt_dir', action='store', type=str, help='ckpt_dir', required=True)
-    parser.add_argument('--ckpt_name', action='store', type=str, help='ckpt_dir', required=True)
+    parser.add_argument('--ckpt_name', action='store', type=str, help='ckpt_dir', required=False)
     parser.add_argument('--policy_class', action='store', type=str, help='policy_class, capitalize', required=True)
     parser.add_argument('--task_name', action='store', type=str, help='task_name', required=True)
     parser.add_argument('--batch_size', action='store', type=int, help='batch_size', required=True)
@@ -457,5 +462,7 @@ if __name__ == '__main__':
     parser.add_argument('--hidden_dim', action='store', type=int, help='hidden_dim', required=False)
     parser.add_argument('--dim_feedforward', action='store', type=int, help='dim_feedforward', required=False)
     parser.add_argument('--temporal_agg', action='store_true')
+
+    parser.add_argument('--wandb_mode', type=str, default='online', help='wandb mode') # online, disabled
     
     main(vars(parser.parse_args()))

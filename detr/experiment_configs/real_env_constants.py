@@ -61,6 +61,16 @@ TASK_CONFIGS = {
         'camera_names': ['color_image'],
         'zero_qpos': True
     },
+
+    'insert_ibuprofen_rel':{
+        'dataset_dir': [
+                        os.environ['DATA'] + '/closed_loop_demos/insert_ibuprofen_relactions',
+                        ],
+        'num_episodes': -1,
+        'episode_len': 80,
+        'camera_names': ['color_image'],
+        'actiondim':7
+    },
 }
 
 ### ALOHA fixed constants
