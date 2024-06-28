@@ -15,7 +15,7 @@ OTHER_FOLDERS_AND_FILES = [
 
 def download_from_gcs(args):
 
-    destination_path = f'/home/febert/data/act_training/training_outputs/{args.run_name}'
+    destination_path = f'/home/user/data/act_training_runs/{args.run_name}'
     source_path = f'/mnt/disks/extra_data/data/act_training/training_outputs/{args.run_name}'
 
     if not args.dry_run:

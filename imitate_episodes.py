@@ -110,6 +110,8 @@ def main(args):
         'camera_names': camera_names,
         'real_robot': not is_sim
     }
+    if 'relative_actions' in task_config:
+        config['relative_actions'] = task_config['relative_actions']
 
     if is_eval:
         ckpt_names = [args['ckpt_name']]
@@ -222,9 +224,8 @@ def eval_bc(config, ckpt_name, save_episode=False, zero_qpos=False):
 
     # load environment
     if real_robot:
-        from emancro_base.robot_infra.xarm.visio_motor.xarm_mdp_env import XarmMDP_DeltaPosAbsRot
-        env = XarmMDP_DeltaPosAbsRot(control_freq=50)
-        env_max_reward = 0
+        from emancro_base.robot_infra.xarm.visio_motor.xarm_mdp_env import XarmMDP
+        env = XarmMDP(control_freq=50)
         
         from emancro_base.robot_infra.oculus_teleop.vr_teleop_policy import VRTeleopPolicy
         from emancro_base.robot_infra.transform_publisher.transform_publisher.transform_broadcast import TransformPublisherNodeManager
@@ -248,8 +249,12 @@ def eval_bc(config, ckpt_name, save_episode=False, zero_qpos=False):
     max_timesteps = int(max_timesteps * 1) # may increase for real-world tasks
 
     num_rollouts = 50
-    episode_returns = []
-    highest_rewards = []
+    
+    if config['relative_actions']:
+        action_mode = 'delta_pos_delta_rot'
+    else:
+        action_mode = 'delta_pos_abs_rot'
+        
     for rollout_id in range(num_rollouts):
         
         pre_position(env, teleop_policy)
@@ -274,6 +279,7 @@ def eval_bc(config, ckpt_name, save_episode=False, zero_qpos=False):
         qpos_list = []
         action_list = []
         rewards = []
+        
         with torch.inference_mode():
             for t in range(max_timesteps):
                 ### update onscreen render and wait for DT
@@ -324,7 +330,7 @@ def eval_bc(config, ckpt_name, save_episode=False, zero_qpos=False):
                 target_qpos = action
 
                 ### step the environment
-                obs, info = env.step(target_qpos, t)
+                obs, info = env.step(target_qpos, t, action_mode=action_mode)
                 obs = copy.deepcopy(obs)
 
                 ### for visualization

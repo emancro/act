@@ -69,7 +69,8 @@ TASK_CONFIGS = {
         'num_episodes': -1,
         'episode_len': 80,
         'camera_names': ['color_image'],
-        'actiondim':7
+        'actiondim':7,
+        'relative_actions': True
     },
 }
 

@@ -74,3 +74,37 @@ python3 imitate_episodes.py \
     --seed 0 \
     --eval \
     --run_name eval
+
+
+#trained with bsize 128
+python3 imitate_episodes.py \
+    --task_name insert_ibuprofen_zeroqpos \
+    --ckpt_dir /home/user/code/act/training_outputs/2024-06-09-00-46-29insert_ibuprofen_zeroqposrun_1 \
+    --ckpt_name policy_epoch_10000_seed_0.ckpt \
+    --policy_class ACT --kl_weight 10 --chunk_size 40 --hidden_dim 512 --batch_size 32 --dim_feedforward 3200 \
+    --num_epochs 5000  --lr 2e-5 \
+    --seed 0 \
+    --eval \
+    --run_name eval
+
+#trained with bsize 128, for much longer
+python3 imitate_episodes.py \
+    --task_name insert_ibuprofen_zeroqpos \
+    --ckpt_dir /home/user/code/act/training_outputs/2024-06-10-21-57-10insert_ibuprofen_zeroqposb128_100kepoch \
+    --ckpt_name policy_epoch_24500_seed_0.ckpt \
+    --policy_class ACT --kl_weight 10 --chunk_size 40 --hidden_dim 512 --batch_size 32 --dim_feedforward 3200 \
+    --num_epochs 5000  --lr 2e-5 \
+    --seed 0 \
+    --eval \
+    --run_name eval
+
+# test on relative actions:
+python3 imitate_episodes.py \
+    --task_name insert_ibuprofen_rel \
+    --ckpt_dir /home/user/data/act_training_runs/2024-06-24-18-01-33insert_ibuprofen_relinsert_ibuprofen_rel \
+    --ckpt_name policy_epoch_18000_seed_0.ckpt \
+    --policy_class ACT --kl_weight 10 --chunk_size 40 --hidden_dim 512 --batch_size 32 --dim_feedforward 3200 \
+    --num_epochs 5000  --lr 2e-5 \
+    --seed 0 \
+    --eval \
+    --run_name eval
