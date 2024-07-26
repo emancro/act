@@ -49,3 +49,12 @@ python3 imitate_episodes.py \
     --num_epochs 20000  --lr 2e-5 \
     --seed 0 \
     --run_name insert_ibuprofen_rel
+
+
+python3 imitate_episodes.py \
+    --task_name easo2_insert_ibuprofen_zeroqpos \
+    --ckpt_dir $DATA/act_training/training_outputs \
+    --policy_class ACT --kl_weight 10 --chunk_size 40 --hidden_dim 512 --batch_size 32 --dim_feedforward 3200 \
+    --num_epochs 20000  --lr 2e-5 \
+    --seed 0 \
+    --run_name easo2_insert_ibuprofen_zeroqpos

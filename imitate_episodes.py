@@ -65,7 +65,7 @@ def main(args):
     if 'actiondim' in task_config:
         actiondim = task_config['actiondim']
     else:
-        actiondim = 9 # used in earlier tasks
+        actiondim = 10 # used in earlier tasks
 
     # fixed parameters
     state_dim = 9

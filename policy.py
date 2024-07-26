@@ -7,9 +7,9 @@ import IPython
 e = IPython.embed
 
 class ACTPolicy(nn.Module):
-    def __init__(self, args_override):
+    def __init__(self, args_override, no_argparse=False):
         super().__init__()
-        model, optimizer = build_ACT_model_and_optimizer(args_override)
+        model, optimizer = build_ACT_model_and_optimizer(args_override, no_argparse=no_argparse)
         self.model = model # CVAE decoder
         self.optimizer = optimizer
         self.kl_weight = args_override['kl_weight']

@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
+    # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
 import argparse
 from pathlib import Path
 
@@ -60,25 +60,32 @@ def get_args_parser():
     # repeat args in imitate_episodes just to avoid error. Will not be used
     parser.add_argument('--eval', action='store_true')
     parser.add_argument('--onscreen_render', action='store_true')
-    parser.add_argument('--ckpt_dir', action='store', type=str, help='ckpt_dir', required=True)
+    parser.add_argument('--ckpt_dir', action='store', type=str, help='ckpt_dir', required=False)
     parser.add_argument('--ckpt_name', action='store', type=str, help='ckpt_name', required=False)
-    parser.add_argument('--policy_class', action='store', type=str, help='policy_class, capitalize', required=True)
-    parser.add_argument('--task_name', action='store', type=str, help='task_name', required=True)
-    parser.add_argument('--seed', action='store', type=int, help='seed', required=True)
-    parser.add_argument('--num_epochs', action='store', type=int, help='num_epochs', required=True)
+    parser.add_argument('--policy_class', action='store', type=str, help='policy_class, capitalize', required=False)
+    parser.add_argument('--task_name', action='store', type=str, help='task_name', required=False)
+    parser.add_argument('--seed', action='store', type=int, help='seed', required=False)
+    parser.add_argument('--num_epochs', action='store', type=int, help='num_epochs', required=False)
     parser.add_argument('--kl_weight', action='store', type=int, help='KL Weight', required=False)
     parser.add_argument('--chunk_size', action='store', type=int, help='chunk_size', required=False)
     parser.add_argument('--temporal_agg', action='store_true')
-    parser.add_argument('--run_name', action='store', type=str, help='run_name', required=True)
+    parser.add_argument('--run_name', action='store', type=str, help='run_name', required=False)
 
     parser.add_argument('--wandb_mode', type=str, default='online', help='wandb mode') # online, disabled
 
     return parser
 
 
-def build_ACT_model_and_optimizer(args_override):
+
+
+def build_ACT_model_and_optimizer(args_override, no_argparse=False):
     parser = argparse.ArgumentParser('DETR training and evaluation script', parents=[get_args_parser()])
-    args = parser.parse_args()
+
+    # get default args without actually parsing:
+    if no_argparse:
+        args = parser.parse_args([])
+    else:
+        args = parser.parse_args()
 
     for k, v in args_override.items():
         setattr(args, k, v)

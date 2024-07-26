@@ -72,6 +72,16 @@ TASK_CONFIGS = {
         'actiondim':7,
         'relative_actions': True
     },
+
+    'easo2_insert_ibuprofen_zeroqpos':{
+        'dataset_dir': [
+                        os.environ['DATA'] + '/closed_loop_demos_easo2/insert_ibuprofen',
+                        ],
+        'num_episodes': -1,
+        'episode_len': 80,
+        'camera_names': ['CameraEnum.WRIST_CAMERA_LEFT'],
+        'zero_qpos': True
+    },
 }
 
 ### ALOHA fixed constants

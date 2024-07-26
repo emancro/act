@@ -165,6 +165,8 @@ def load_data(dataset_dir, max_num_episodes, camera_names, batch_size_train, bat
     else:
         all_hdf5 = glob.glob(os.path.join(dataset_dir, search_pattern), recursive=True)
     
+    all_hdf5 = [f for f in all_hdf5 if 'no_images' not in f]
+    
     print(f"found {len(all_hdf5)} hdf5 files")
     random.shuffle(all_hdf5)
 
