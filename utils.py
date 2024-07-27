@@ -6,6 +6,8 @@ from torch.utils.data import TensorDataset, DataLoader
 from scipy.spatial.transform import Rotation
 import glob
 import random
+import io
+from PIL import Image
 
 def euler_to_r6(euler, degrees=False):
     rot_mat = Rotation.from_euler("xyz", euler, degrees=degrees).as_matrix()
@@ -82,7 +84,15 @@ class EpisodicDataset(torch.utils.data.Dataset):
         # new axis for different cameras
         all_cam_images = []
         for cam_name in self.camera_names:
-            all_cam_images.append(image_dict[cam_name])
+            image = image_dict[cam_name]
+            if isinstance(image, np.bytes_): # if image is compressed JPEG string
+                jpg_bytes = io.BytesIO(image)
+                image = Image.open(jpg_bytes)
+                image = np.array(image)
+                all_cam_images.append(image)
+            else:
+                all_cam_images.append(image)
+                
         all_cam_images = np.stack(all_cam_images, axis=0)
 
         # construct observations
